@@ -65,5 +65,5 @@ subprocess.call([os.path.join(IDA_INSTALL_PATH, ida), '-A',
 
 # Display contents of output file, then clean up
 if os.path.exists(OUTFILE):
-    print open(OUTFILE).read()
+    sys.stderr.write(open(OUTFILE).read())
     os.unlink(OUTFILE)
