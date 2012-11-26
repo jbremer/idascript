@@ -18,18 +18,22 @@ import subprocess
 OUTFILE = os.path.join(os.getenv('TEMP'), 'idaout.txt')
 IDA_INSTALL_PATH = 'C:/ProgFiles86/ida61'
 
-# Check usage
-if len(sys.argv) < 3 or not os.path.exists(sys.argv[1]):
+
+def usage():
     path = os.path.basename(sys.argv[0])
-    print 'Usage: %s [-B] <idb-file> <script-file> [script arguments]' % path
-    print '-B flag tells IDA Pro to go into Batch Mode'
+    print 'Usage: %s [-64] <idb-file> <script-file> [script arguments]' % path
+    print '-64 switches to 64-bit support (e.g. idaq64)'
     sys.exit(1)
+
+# Check usage
+if len(sys.argv) < 3:
+    usage()
 
 idx = 1
 
-batch_mode = False
-if sys.argv[idx] == '-B':
-    batch_mode = True
+is_64 = False
+if sys.argv[idx] == '-64':
+    is_64 = True
     idx += 1
 
 # Get IDB / script file from command line
@@ -37,8 +41,16 @@ idb = os.path.abspath(sys.argv[idx])
 idc = os.path.abspath(sys.argv[idx + 1])
 idc_args = sys.argv[idx + 2:]
 
+if not os.path.exists(idb):
+    print '%s is not a valid idb path' % idb
+    usage()
+
+if not os.path.exists(idc) or 0:
+    print '%s is not a valid idc path' % idc
+    usage()
+
 # Use idaq or idaq64, depending on the IDB file extension
-ida = 'idaq64' if idb.endswith('.i64') else 'idaq'
+ida = 'idaq' if not is_64 else 'idaq64'
 
 if sys.platform == 'win32':
     ida += '.exe'
@@ -48,12 +60,8 @@ if os.path.exists(OUTFILE):
     os.unlink(OUTFILE)
 
 # Run IDA
-args = [os.path.join(IDA_INSTALL_PATH, ida), '-A']
-if batch_mode:
-    args += ['-B']
-args += ['-S' + idc + ' ' + ' '.join(idc_args), idb]
-print args
-subprocess.call(args)
+subprocess.call([os.path.join(IDA_INSTALL_PATH, ida), '-A',
+                 '-S' + idc + ' ' + ' '.join(idc_args), idb])
 
 # Display contents of output file, then clean up
 if os.path.exists(OUTFILE):
