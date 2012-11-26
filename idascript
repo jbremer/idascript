@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+# Python version of the idascript utility for IDA.
+# Original idascript utility: http://www.hexblog.com/?p=128
+#
+# Craig Heffner (added linux support)
+# 14-November-2012
+# http://www.tacnetsol.com
+# http://www.devttys0.com
+#
+# Jurriaan Bremer (modified some path stuff, and hardcoded some stuff..)
+# http://jbremer.org/
+
+import os
+import sys
+import subprocess
+
+OUTFILE = os.path.join(os.getenv('TEMP'), 'idaout.txt')
+IDA_INSTALL_PATH = 'C:/ProgFiles86/ida61'
+
+# Check usage
+if len(sys.argv) < 3 or not os.path.exists(sys.argv[1]):
+    path = os.path.basename(sys.argv[0])
+    print 'Usage: %s [-B] <idb-file> <script-file> [script arguments]' % path
+    print '-B flag tells IDA Pro to go into Batch Mode'
+    sys.exit(1)
+
+idx = 1
+
+batch_mode = False
+if sys.argv[idx] == '-B':
+    batch_mode = True
+    idx += 1
+
+# Get IDB / script file from command line
+idb = os.path.abspath(sys.argv[idx])
+idc = os.path.abspath(sys.argv[idx + 1])
+idc_args = sys.argv[idx + 2:]
+
+# Use idaq or idaq64, depending on the IDB file extension
+ida = 'idaq64' if idb.endswith('.i64') else 'idaq'
+
+if sys.platform == 'win32':
+    ida += '.exe'
+
+# Clean up output file, just in case
+if os.path.exists(OUTFILE):
+    os.unlink(OUTFILE)
+
+# Run IDA
+args = [os.path.join(IDA_INSTALL_PATH, ida), '-A']
+if batch_mode:
+    args += ['-B']
+args += ['-S' + idc + ' ' + ' '.join(idc_args), idb]
+print args
+subprocess.call(args)
+
+# Display contents of output file, then clean up
+if os.path.exists(OUTFILE):
+    print open(OUTFILE).read()
+    os.unlink(OUTFILE)
