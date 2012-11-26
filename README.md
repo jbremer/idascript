@@ -10,6 +10,8 @@ idascript [-B] <idb-file> <script-file> [script arguments]
 -B flag tells IDA Pro to go into Batch Mode
 ```
 
+`Batch mode` means that IDA Pro will *not* show a GUI.
+
 Installing
 ==========
 
