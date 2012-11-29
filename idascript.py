@@ -8,7 +8,7 @@
 # http://www.tacnetsol.com
 # http://www.devttys0.com
 #
-# Jurriaan Bremer (pep8, corrected the temp file path thingy)
+# Jurriaan Bremer
 # http://jbremer.org/
 
 import idc
@@ -32,6 +32,10 @@ class ToFileStdOut(object):
 
     def __del__(self):
         self.outfile.close()
+
+
+def dummy():
+    """Dummy function used to eliminate flake8 import unused warning"""
 
 # Redirect stdout and stderr to the output file
 path = os.path.join(os.getenv('TEMP'), 'idaout.txt')
