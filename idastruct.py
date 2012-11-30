@@ -43,7 +43,7 @@ def register_struct(objname, s):
 
         ret = idc.AddStrucMember(tid, name, -1, typ, typeid, size)
         if ret < 0:
-            raise Exception('Error adding member %s: %d' % (name, ret))
+            raise Exception('ida_add_structure_member %s: %d' % (name, ret))
 
     # add this structure identifier to the global list
     _registered_structures[s] = objname, tid, ctypes.sizeof(s)
