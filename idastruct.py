@@ -82,6 +82,10 @@ def apply_struct(objname, address):
     idc.MakeUnknown(address, size, idc.DOUNK_SIMPLE)
     idc.MakeStruct(address, objname)
 
+    # read the structure and return that data
+    data = (idc.GetOriginalByte(x) for x in xrange(address, address + size))
+    ret = structure.from_buffer_copy(''.join(chr(x) for x in data))
+
     offset = 0
     for name, typ in structure._fields_:
         # pointer to an ascii string
@@ -92,9 +96,12 @@ def apply_struct(objname, address):
         elif typ == ctypes.c_wchar_p:
             # TODO implement unicode string stuff
             pass
+        # this is a pointer to another structure
+        elif hasattr(typ, 'contents'):
+            _name = _registered_structures[typ._type_][0]
+            _addr = idc.Dword(address + offset)
+            getattr(ret, name).contents = apply_struct(_name, _addr)
 
         offset += ctypes.sizeof(typ)
 
-    # read the structure and return that data
-    data = (idc.GetOriginalByte(x) for x in xrange(address, address + size))
-    return structure.from_buffer_copy(''.join(chr(x) for x in data))
+    return ret
