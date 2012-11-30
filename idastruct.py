@@ -16,6 +16,8 @@ _ctypes_table = {
     ctypes.c_ulong: (idc.FF_DWRD, 4),
     ctypes.c_float: (idc.FF_FLOAT, 4),
     ctypes.c_double: (idc.FF_DOUBLE, 8),
+    ctypes.c_char_p: (idc.FF_0OFF | idc.FF_DWRD, 4),
+    ctypes.c_wchar_p: (idc.FF_0OFF | idc.FF_DWRD, 4),
 }
 
 # all registered structures; key: type, value: (name, tid, size)
@@ -37,6 +39,7 @@ def register_struct(objname, s):
         elif typ in _registered_structures:
             _, typeid, size = _registered_structures[typ]
             typ = idc.FF_STRU
+        # pointer to a predefined structure
         else:
             typ = idc.FF_0OFF | idc.FF_DWRD
             typeid, size = 0, 4
