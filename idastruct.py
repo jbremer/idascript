@@ -1,6 +1,8 @@
 import ctypes
 import idc
 
+MAX_STRING_LENGTH = 1024
+
 # table to convert ctypes types to IDA types
 _ctypes_table = {
     ctypes.c_bool: (idc.FF_BYTE, 1),
@@ -22,6 +24,13 @@ _ctypes_table = {
 
 # all registered structures; key: type, value: (name, tid, size)
 _registered_structures = {}
+
+
+def _struct_by_name(objname):
+    for x, (name, _, _) in _registered_structures.items():
+        if objname == name:
+            return x
+    raise Exception('Structure not found: %s' % objname)
 
 
 def register_struct(objname, s):
@@ -51,3 +60,41 @@ def register_struct(objname, s):
     # add this structure identifier to the global list
     _registered_structures[s] = objname, tid, ctypes.sizeof(s)
     return tid
+
+
+def make_str(address):
+    """Calculate the length, undefine and make an ascii string."""
+    # calculate the length, with a hardcoded maximum length
+    for offset in xrange(MAX_STRING_LENGTH):
+        if not idc.GetOriginalByte(address + offset):
+            break
+
+    idc.MakeUnknown(address, offset, idc.DOUNK_SIMPLE)
+    idc.MakeStr(address, address + offset)
+
+
+def apply_struct(objname, address):
+    """Apply a Structure to an address."""
+    structure = _struct_by_name(objname)
+    size = ctypes.sizeof(structure)
+
+    # it is known
+    idc.MakeUnknown(address, size, idc.DOUNK_SIMPLE)
+    idc.MakeStruct(address, objname)
+
+    offset = 0
+    for name, typ in structure._fields_:
+        # pointer to an ascii string
+        if typ == ctypes.c_char_p:
+            value = idc.Dword(address + offset)
+            make_str(value)
+        # pointer to an unicode string
+        elif typ == ctypes.c_wchar_p:
+            # TODO implement unicode string stuff
+            pass
+
+        offset += ctypes.sizeof(typ)
+
+    # read the structure and return that data
+    data = (idc.GetOriginalByte(x) for x in xrange(address, address + size))
+    return structure.from_buffer_copy(''.join(chr(x) for x in data))
