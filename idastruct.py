@@ -65,12 +65,17 @@ def register_struct(objname, s):
 def make_str(address):
     """Calculate the length, undefine and make an ascii string."""
     # calculate the length, with a hardcoded maximum length
+    ret = ''
     for offset in xrange(MAX_STRING_LENGTH):
-        if not idc.GetOriginalByte(address + offset):
+        ch = idc.GetOriginalByte(address + offset)
+        if not ch:
             break
+
+        ret += chr(ch)
 
     idc.MakeUnknown(address, offset, idc.DOUNK_SIMPLE)
     idc.MakeStr(address, address + offset)
+    return ret
 
 
 def apply_struct(objname, address):
@@ -84,14 +89,18 @@ def apply_struct(objname, address):
 
     # read the structure and return that data
     data = (idc.GetOriginalByte(x) for x in xrange(address, address + size))
-    ret = structure.from_buffer_copy(''.join(chr(x) for x in data))
+    _ret = structure.from_buffer_copy(''.join(chr(x) for x in data))
 
+    class _Structure:
+        pass
+
+    ret = _Structure()
     offset = 0
     for name, typ in structure._fields_:
         # pointer to an ascii string
         if typ == ctypes.c_char_p:
             value = idc.Dword(address + offset)
-            make_str(value)
+            setattr(ret, name, make_str(value))
         # pointer to an unicode string
         elif typ == ctypes.c_wchar_p:
             # TODO implement unicode string stuff
@@ -100,8 +109,8 @@ def apply_struct(objname, address):
         elif hasattr(typ, 'contents'):
             _name = _registered_structures[typ._type_][0]
             _addr = idc.Dword(address + offset)
-            getattr(ret, name).contents = apply_struct(_name, _addr)
-
+            setattr(ret, name, apply_struct(_name, _addr))
+        else:
+            setattr(ret, name, getattr(_ret, name))
         offset += ctypes.sizeof(typ)
-
     return ret
